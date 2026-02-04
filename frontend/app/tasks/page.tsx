@@ -32,8 +32,9 @@ export default function TasksPage() {
   }, [filter]);
 
   const checkAuth = async () => {
-    const session = await getSession();
-    if (!session) {
+    // Check if user has a valid token
+    const token = localStorage.getItem("auth_token");
+    if (!token) {
       router.push("/login");
       return;
     }

@@ -6,7 +6,6 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
 
 interface AuthFormProps {
   mode: "login" | "signup";
@@ -28,12 +27,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
     setIsLoading(true);
 
     try {
-      // Use the backend API URL from environment or default
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-      const endpoint = isLogin ? `${API_URL}/auth/login` : `${API_URL}/auth/signup`;
-
-      console.log("Attempting authentication to:", endpoint); // Debug log
-
+      const endpoint = isLogin ? "/auth/login" : "/auth/signup";
       const body = isLogin
         ? { email, password }
         : { email, password, name };
@@ -44,49 +38,23 @@ export default function AuthForm({ mode }: AuthFormProps) {
         body: JSON.stringify(body),
       });
 
-      console.log("Response status:", response.status); // Debug log
-
-      // Check if response has content
-      const contentType = response.headers.get("content-type");
-      let data = null;
-
-      if (contentType && contentType.includes("application/json")) {
-        const text = await response.text();
-        console.log("Response text:", text); // Debug log
-        if (text) {
-          try {
-            data = JSON.parse(text);
-          } catch (parseError) {
-            console.error("Failed to parse JSON:", text);
-            throw new Error("Invalid response from server");
-          }
-        }
-      }
-
       if (!response.ok) {
-        const errorMessage = data?.detail || data?.message || `Authentication failed (${response.status})`;
-        throw new Error(errorMessage);
+        const data = await response.json();
+        throw new Error(data.detail || "Authentication failed");
       }
 
-      // Store token and redirect
-      if (data && data.access_token) {
-        console.log("Authentication successful, storing token"); // Debug log
+      const data = await response.json();
+
+      // Store token from backend response
+      if (data.access_token) {
         localStorage.setItem("auth_token", data.access_token);
         router.push("/tasks");
       } else {
-        throw new Error("No access token received from server");
+        throw new Error("No access token received");
       }
     } catch (err: any) {
       console.error("Auth error:", err);
-
-      // Better error messages for common issues
-      let errorMessage = err.message || "Something went wrong. Please try again.";
-
-      if (err.message?.includes("Failed to fetch") || err.name === "TypeError") {
-        errorMessage = "Cannot connect to server. Please make sure the backend is running on port 8000.";
-      }
-
-      setError(errorMessage);
+      setError(err.message || "Something went wrong. Please try again.");
     } finally {
       setIsLoading(false);
     }

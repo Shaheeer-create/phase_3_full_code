@@ -1,0 +1,82 @@
+# Default values for todo-chatbot Helm chart
+
+# Frontend configuration
+frontend:
+  name: frontend
+  replicaCount: 2
+  image:
+    repository: todo-frontend
+    tag: v3.0
+    pullPolicy: Never  # Use local images in Minikube
+  service:
+    type: ClusterIP
+    port: 3000
+    targetPort: 3000
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "250m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+  env:
+    - name: NODE_ENV
+      value: "production"
+    - name: NEXT_PUBLIC_API_URL
+      value: "http://todo.local/api"
+    - name: BETTER_AUTH_SECRET
+      valueFrom:
+        secretKeyRef:
+          name: todo-secrets
+          key: better-auth-secret
+    - name: BETTER_AUTH_URL
+      value: "http://todo.local"
+    - name: DATABASE_URL
+      valueFrom:
+        secretKeyRef:
+          name: todo-secrets
+          key: database-url
+
+# Backend configuration
+backend:
+  name: backend
+  replicaCount: 2
+  image:
+    repository: todo-backend
+    tag: latest
+    pullPolicy: Never  # Use local images in Minikube
+  service:
+    type: ClusterIP
+    port: 8001
+    targetPort: 8001
+  resources:
+    requests:
+      memory: "512Mi"
+      cpu: "500m"
+    limits:
+      memory: "1Gi"
+      cpu: "1000m"
+  env:
+    - name: DATABASE_URL
+      valueFrom:
+        secretKeyRef:
+          name: todo-secrets
+          key: database-url
+    - name: GEMINI_API_KEY
+      valueFrom:
+        secretKeyRef:
+          name: todo-secrets
+          key: gemini-api-key
+    - name: BETTER_AUTH_SECRET
+      valueFrom:
+        secretKeyRef:
+          name: todo-secrets
+          key: better-auth-secret
+
+# Ingress configuration
+ingress:
+  enabled: true
+  className: nginx
+  host: todo.local
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$2

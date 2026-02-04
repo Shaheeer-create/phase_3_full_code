@@ -23,14 +23,19 @@ ssl_context = ssl.create_default_context()
 ssl_context.check_hostname = True
 ssl_context.verify_mode = ssl.CERT_REQUIRED
 
-# Create async engine with SSL
+# Create async engine with SSL and connection pooling for Neon
 engine = create_async_engine(
     DATABASE_URL,
     echo=True,  # Log SQL queries (disable in production)
     future=True,
+    pool_pre_ping=True,  # Verify connections before using them
+    pool_recycle=300,  # Recycle connections after 5 minutes
+    pool_size=5,  # Maximum number of connections in the pool
+    max_overflow=10,  # Maximum overflow connections
     connect_args={
         "ssl": ssl_context,
-        "server_settings": {"jit": "off"}  # Disable JIT for better compatibility
+        "server_settings": {"jit": "off"},  # Disable JIT for better compatibility
+        "command_timeout": 60,  # Command timeout in seconds
     }
 )
 
