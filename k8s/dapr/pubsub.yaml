@@ -1,0 +1,48 @@
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: kafka-pubsub
+  namespace: default
+spec:
+  type: pubsub.kafka
+  version: v1
+  metadata:
+  # Kafka broker addresses
+  - name: brokers
+    value: "seed-abc123.cloud.redpanda.com:9092"  # Replace with actual Redpanda Cloud URL
+
+  # Consumer group for this application
+  - name: consumerGroup
+    value: "todo-app"
+
+  # Authentication type
+  - name: authType
+    value: "password"
+
+  # SASL username (from Kubernetes secret)
+  - name: saslUsername
+    secretKeyRef:
+      name: kafka-secrets
+      key: username
+
+  # SASL password (from Kubernetes secret)
+  - name: saslPassword
+    secretKeyRef:
+      name: kafka-secrets
+      key: password
+
+  # SASL mechanism
+  - name: saslMechanism
+    value: "SCRAM-SHA-256"
+
+  # Client ID
+  - name: clientID
+    value: "todo-app-client"
+
+  # Initial offset (oldest or newest)
+  - name: initialOffset
+    value: "newest"
+
+  # Max message bytes
+  - name: maxMessageBytes
+    value: "1024000"

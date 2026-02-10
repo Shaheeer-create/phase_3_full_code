@@ -6,7 +6,7 @@
  */
 import axios, { AxiosError } from "axios";
 import { getAccessToken } from "./auth";
-import type { Task, TaskCreate, TaskUpdate } from "@/types/task";
+import type { Task, TaskCreate, TaskUpdate, TaskSearchParams, RecurringPattern, TaskReminder } from "@/types/task";
 import type {
   Conversation,
   ConversationWithMessages,
@@ -105,6 +105,71 @@ export const taskApi = {
    */
   delete: async (id: number): Promise<void> => {
     await apiClient.delete(`/api/tasks/${id}`);
+  },
+
+  // ============================================================================
+  // Phase V: Advanced Features
+  // ============================================================================
+
+  /**
+   * Advanced search for tasks with multiple filters
+   */
+  search: async (params: TaskSearchParams): Promise<Task[]> => {
+    const queryParams = new URLSearchParams();
+
+    if (params.q) queryParams.append('q', params.q);
+    if (params.priority) queryParams.append('priority', params.priority);
+    if (params.tags) queryParams.append('tags', params.tags);
+    if (params.due_before) queryParams.append('due_before', params.due_before);
+    if (params.due_after) queryParams.append('due_after', params.due_after);
+    if (params.status) queryParams.append('status', params.status);
+    if (params.sort_by) queryParams.append('sort_by', params.sort_by);
+    if (params.sort_order) queryParams.append('sort_order', params.sort_order);
+
+    const response = await apiClient.get<Task[]>(`/api/tasks/search?${queryParams.toString()}`);
+    return response.data;
+  },
+
+  /**
+   * Add tags to a task
+   */
+  addTags: async (id: number, tags: string[]): Promise<Task> => {
+    const response = await apiClient.post<Task>(`/api/tasks/${id}/tags`, { tags });
+    return response.data;
+  },
+
+  /**
+   * Create a reminder for a task
+   */
+  createReminder: async (
+    id: number,
+    reminder_time: string,
+    reminder_type: 'notification' | 'email' | 'both' = 'notification'
+  ): Promise<TaskReminder> => {
+    const response = await apiClient.post<TaskReminder>(`/api/tasks/${id}/reminders`, {
+      reminder_time,
+      reminder_type,
+    });
+    return response.data;
+  },
+
+  /**
+   * Set up a recurring pattern for a task
+   */
+  createRecurringPattern: async (
+    id: number,
+    pattern: RecurringPattern
+  ): Promise<any> => {
+    const response = await apiClient.post(`/api/tasks/${id}/recurring`, pattern);
+    return response.data;
+  },
+
+  /**
+   * Get all instances of a recurring task (parent + children)
+   */
+  getRecurringInstances: async (id: number): Promise<Task[]> => {
+    const response = await apiClient.get<Task[]>(`/api/tasks/${id}/instances`);
+    return response.data;
   },
 };
 
